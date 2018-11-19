@@ -1,3 +1,5 @@
+// Package vipaccess provides a client for Symantec's VIP Access credential
+// service.
 package vipaccess
 
 import (
