@@ -5,9 +5,11 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/hmac"
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -19,7 +21,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/pquerna/otp/totp"
 	"rsc.io/qr"
 )
 
@@ -243,10 +244,7 @@ var successNeedle = []byte("Your VIP Credential is working correctly.")
 // Validate sends the credential ID with a current TOTP code to Symantec to
 // verify it is working.
 func (c *Credential) Validate() error {
-	otp, err := totp.GenerateCode(b32(c.Key), time.Now())
-	if err != nil {
-		return err
-	}
+	otp := generateTOTPCode(c.Key, time.Now())
 
 	form := url.Values{
 		"cred": {c.ID},
@@ -271,6 +269,26 @@ func (c *Credential) Validate() error {
 		return fmt.Errorf("server did not return a successful status: %q", body)
 	}
 	return nil
+}
+
+// generateTOTPCode returns a 6 digit numeric code based on the given 20 byte
+// secret and time using the RFC 6238 algorithm.
+func generateTOTPCode(secret []byte, t time.Time) string {
+	ctr := make([]byte, 8)
+	binary.BigEndian.PutUint64(ctr, uint64(t.Unix()/30))
+
+	h := hmac.New(sha1.New, secret)
+	h.Write(ctr)
+	sum := h.Sum(nil)
+
+	// https://tools.ietf.org/html/rfc4226#section-5.4
+	offset := sum[19] & 0xf
+	value := (int(sum[offset+0] & 0x7f)) << 24
+	value |= (int(sum[offset+1] & 0xff)) << 16
+	value |= (int(sum[offset+2] & 0xff)) << 8
+	value |= (int(sum[offset+3] & 0xff)) << 0
+
+	return fmt.Sprintf("%06d", value%1000000)
 }
 
 func b32(key []byte) string {
