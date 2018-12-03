@@ -30,9 +30,11 @@ const ProvisioningURL = "https://services.vip.symantec.com/prov"
 
 // Credential represents a VIP Access credential issued by Symantec.
 type Credential struct {
-	ID      string
-	Key     []byte
-	Expires time.Time
+	ID          string
+	Key         []byte
+	Expires     time.Time
+	AccountName string
+	Issuer      string
 }
 
 // GenerateCredential contacts Symantec to request a new VIP Access credential
@@ -56,7 +58,7 @@ func GenerateCredential(p *Parameters) (*Credential, error) {
 		return nil, err
 	}
 
-	return t.buildCredential()
+	return t.buildCredential(p)
 }
 
 var requestTmpl = template.Must(template.New("").Parse(
@@ -129,6 +131,8 @@ type Parameters struct {
 	DistChannel                string
 	Platform                   string
 	Data                       string
+	AccountName                string
+	Issuer                     string
 }
 
 // GenerateRandomParameters returns a valid set of Parameters with somewhat
@@ -147,6 +151,8 @@ func GenerateRandomParameters() *Parameters {
 		ClientID:                   "Mac-" + randStr("0123456789ABCDEF", 16),
 		DistChannel:                "Symantec",
 		Platform:                   "iMac",
+		AccountName:                "VIP Access",
+		Issuer:                     "Symantec",
 	}
 }
 
@@ -217,7 +223,7 @@ var secretEncryptionKey = []byte{
 	0xa9, 0xa3, 0x23, 0x9a, 0x86, 0xd6, 0xcc, 0xd9,
 }
 
-func (t *token) buildCredential() (*Credential, error) {
+func (t *token) buildCredential(p *Parameters) (*Credential, error) {
 	if len(t.Ciphertext) != 32 {
 		return nil, fmt.Errorf("unexpected ciphertext length %d", len(t.Ciphertext))
 	}
@@ -233,9 +239,11 @@ func (t *token) buildCredential() (*Credential, error) {
 	}
 
 	return &Credential{
-		ID:      t.ID,
-		Key:     secret[:20],
-		Expires: t.Expiry,
+		ID:          t.ID,
+		Key:         secret[:20],
+		Expires:     t.Expiry,
+		AccountName: p.AccountName,
+		Issuer:      p.Issuer,
 	}, nil
 }
 
@@ -304,10 +312,10 @@ func (c *Credential) URI() string {
 	u := url.URL{
 		Scheme: "otpauth",
 		Host:   "totp",
-		Path:   fmt.Sprintf("VIP Access:%s", c.ID),
+		Path:   fmt.Sprintf("%s:%s", c.AccountName, c.ID),
 		RawQuery: url.Values{
 			"secret": {b32(c.Key)},
-			"issuer": {"Symantec"},
+			"issuer": {c.Issuer},
 		}.Encode(),
 	}
 	return u.String()
