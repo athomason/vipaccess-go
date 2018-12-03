@@ -124,11 +124,13 @@ var testCredential = &Credential{
 		0x22, 0x12, 0x1f, 0x37, 0xc7, 0x76, 0x36, 0x22,
 		0xf0, 0x13, 0x5c, 0x69,
 	},
-	Expires: time.Unix(1506382582, 56000000),
+	Expires:     time.Unix(1506382582, 56000000),
+	AccountName: "VIP Access",
+	Issuer:      "Symantec",
 }
 
 func TestBuildCredential(t *testing.T) {
-	got, err := testToken.buildCredential()
+	got, err := testToken.buildCredential(GenerateRandomParameters())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,10 +11,21 @@ import (
 )
 
 func main() {
-	png := flag.String("png", "", "png path to write QR code")
+	var (
+		png         = flag.String("png", "", "png path to write QR code")
+		accountName = flag.String("account-name", "", "account name")
+		issuer      = flag.String("issuer", "", "issuer")
+	)
 	flag.Parse()
 
 	p := vipaccess.GenerateRandomParameters()
+
+	if *accountName != "" {
+		p.AccountName = *accountName
+	}
+	if *issuer != "" {
+		p.Issuer = *issuer
+	}
 
 	c, err := vipaccess.GenerateCredential(p)
 	if err != nil {
