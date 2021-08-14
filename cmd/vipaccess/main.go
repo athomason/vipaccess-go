@@ -15,6 +15,7 @@ func main() {
 		png         = flag.String("png", "", "png path to write QR code")
 		accountName = flag.String("account-name", "", "account name")
 		issuer      = flag.String("issuer", "", "issuer")
+		tokenModel  = flag.String("token-model", "", "token model e.g. SYMC/VSST; see https://knowledge.broadcom.com/external/article?legacyId=tech239895")
 	)
 	flag.Parse()
 
@@ -25,6 +26,9 @@ func main() {
 	}
 	if *issuer != "" {
 		p.Issuer = *issuer
+	}
+	if *tokenModel != "" {
+		p.TokenModel = *tokenModel
 	}
 
 	c, err := vipaccess.GenerateCredential(p)
