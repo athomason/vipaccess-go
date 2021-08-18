@@ -140,7 +140,7 @@ type Parameters struct {
 func GenerateRandomParameters() *Parameters {
 	return &Parameters{
 		Timestamp:                  int(time.Now().Unix()),
-		TokenModel:                 "VSST",
+		TokenModel:                 "SYMC",
 		OTPAlgorithm:               "HMAC-SHA1-TRUNC-6DIGITS",
 		SharedSecretDeliveryMethod: "HTTPS",
 		Manufacturer:               "Apple Inc.",
